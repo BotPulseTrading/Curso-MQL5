@@ -1,0 +1,284 @@
+//+------------------------------------------------------------------+
+//|                                    Clase 1 Bot Pulse Trading.mq5 |
+//|                                Copyright 2025, Bot Pulse Trading |
+//|                   https://www.mql5.com/en/users/adrianfxx/seller |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2025, Bot Pulse Trading"
+#property link      "https://www.mql5.com/en/users/adrianfxx/seller"
+#property version   "1.00"
+#property description "Esto una prueba de descripcion"
+
+#include <Trade\Trade.mqh>                  // Library to Management Orders
+
+CTrade trade;
+
+
+int Position_buy_count;
+int Position_sell_count;                   //#1 initialize counts
+double Lotes3;
+
+
+enum Interes{
+
+APY,        //Interes Compuesto
+APR         //Interes Simple
+
+};
+
+
+//+---Variable de datos de cuenta
+
+double BalanceInicial;   // Balance inicial
+
+//+---Fin Variable de datos de cuenta
+
+
+//+--Indicadores---+//
+
+double      MA[];                // array para el indicador iMA
+int         MA_handle;           // manejador para el indicador iMA
+
+double      RSI[];                // array para el indicador iRSI
+int         RSI_handle;           // manejador para el indicador iRSI
+//+--Fin Indicadores+//
+
+
+
+input group "Parametros del Trade";
+input double TP=1.2548;                       // Take profit en Pips             
+input double SL= 50;                          // Stoploss en pips
+input Interes Interes2 = APY;                 // Tipo de Interes 
+input double Lotes=0.1;                       // Lotes para cada trade 
+input int tp2=454;                            // Tp2 en ulong
+input ulong Magicnumber=2352;                 // MagicNumber
+input bool ReTrade =false;                    //¿Activar Trailing?
+input string comentario="Bot Pulse Trading";  // Comentario de cada trade
+
+input group "Ajustes del Indicador MA";
+input ENUM_TIMEFRAMES MaTimeframe = PERIOD_D1;     // TimeFrame de MA
+input int MaPeriods = 200;                         // MA Periodo
+input int MaShift = 1;                             // MA Shift
+input ENUM_MA_METHOD MaMetodo = MODE_SMA;          // Tipo de MA
+input ENUM_APPLIED_PRICE MaAplicada = PRICE_CLOSE; // MA Aplicada a...
+
+input group "Ajustes del Indicador RSI";
+input ENUM_TIMEFRAMES RSITimeframe = PERIOD_D1;     // TimeFrame de RSI
+input int RSIPeriods = 20;                          // RSI Periodo
+input ENUM_APPLIED_PRICE RSIAplicada = PRICE_CLOSE; // RSI Aplicado a...
+
+
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+  {
+  
+  trade.SetExpertMagicNumber(Magicnumber);
+  BalanceInicial=AccountInfoDouble(ACCOUNT_BALANCE);
+//---
+    //--- Creacion de Indicador MA
+   MA_handle=iMA(_Symbol,MaTimeframe,MaPeriods,MaShift,MaMetodo,MaAplicada);
+   
+   //--- Creacion de Indicador RSI
+   RSI_handle=iRSI(_Symbol,RSITimeframe,RSIPeriods,RSIAplicada);
+//---
+
+   
+   
+//+---Deteccion de errores al cargar indicadores
+    if(MA_handle<0)
+      {
+      Print("Fallo al cargar MA = ",INVALID_HANDLE);
+      Print("Código de error = ",GetLastError());
+      //--- forced program termination
+      return(INIT_FAILED);
+      }
+     
+    if(RSI_handle<0)
+      {
+      Print("Fallo al cargar RSI = ",INVALID_HANDLE);
+      Print("Código de error = ",GetLastError());
+      //--- forced program termination
+      return(INIT_FAILED);
+      }
+
+//+---Fin Deteccion de errores al cargar indicadores
+
+
+
+
+   return(INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+  {
+//---
+   Alert("BOT ELIMINADO");
+  }
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+  
+  double BalanceActual = AccountInfoDouble(ACCOUNT_BALANCE);
+  double Ask = SymbolInfoDouble(_Symbol,SYMBOL_ASK);
+  double Bid = SymbolInfoDouble(_Symbol,SYMBOL_BID);
+  
+  double Lotes2 = NormalizeDouble(BalanceActual*Lotes/BalanceInicial,2);
+  
+ 
+  
+  if(Interes2==APY)Lotes3=Lotes2;
+  if(Interes2==APR)Lotes3=Lotes;
+  
+//+---Buffers de Indicadores----+//
+
+
+   //--- Copiamos datos de 100 Velas
+   CopyBuffer(MA_handle,0,0,100,MA);
+   CopyBuffer(RSI_handle,0,0,100,RSI);
+
+   
+   //--- Habilitamos los arrays
+   ArraySetAsSeries(MA,true);
+   ArraySetAsSeries(RSI,true);  
+ 
+   
+   
+
+//+---Fin Buffers de Indicadores---+//
+
+
+
+//+---Obtener High y Lows ---+//
+
+ double H = iHigh(NULL,PERIOD_CURRENT,1);
+ double L = iLow(NULL,PERIOD_CURRENT,1);
+ 
+ double HH =iHigh(NULL,PERIOD_CURRENT,iHighest(NULL,PERIOD_CURRENT,MODE_HIGH,30,1));
+ double LL =iLow(NULL,PERIOD_CURRENT,iLowest(NULL,PERIOD_CURRENT,MODE_LOW,30,1));
+ 
+
+//+--Fin Obtener Highs y Lows-+//
+
+//+-----------CONTAR POSICIONES ABIERTAS---------+//
+Position_buy_count = 0;   Position_sell_count = 0;                   //#1 initialize counts
+
+   for(int i = PositionsTotal() - 1 ; i >= 0 ; i--)   //#2 not i <= 0 
+     {
+  
+     PositionGetTicket(i);                            //#3 Missing PositionGetTicket(i);   
+     string PositionSimbol = PositionGetString(POSITION_SYMBOL);
+     long PositionMagicNumber=PositionGetInteger(POSITION_MAGIC); 
+     string PositionComment =PositionGetString(POSITION_COMMENT);
+      //+-- CLOSE TRADES --+//
+      
+      
+      
+      
+      if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY && _Symbol==PositionSimbol && Magicnumber==PositionMagicNumber ) //#4 not PositionSelect(_Symbol)
+        {
+         Position_buy_count++;
+        }
+      if(PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_SELL && _Symbol==PositionSimbol && Magicnumber==PositionMagicNumber) //#4 not PositionSelect(_Symbol)
+        {
+         Position_sell_count++;
+        }
+
+     } // for loop end
+     
+     //+-----------CONTAR ORDENES ABIERTAS---------+//
+
+Comment("Posiciones abiertas: "+(string)(Position_buy_count+Position_sell_count));
+
+
+
+
+//+-----Condiciones de nuestra estrategia-----+//
+
+
+if(MA[1]<LL && RSI[1]>=50 && RSI[1]<70 && Ask>HH && Position_buy_count==0)
+      {
+      
+
+      double SLprice = SL * _Point * ((_Digits == 5 || _Digits == 3) ? 10.0 : 1.0);
+
+      double SLbuy = Ask - SLprice;
+      
+      double TPprice = TP * _Point * ((_Digits == 5 || _Digits == 3) ? 10.0 : 1.0);
+
+      double TPbuy = Ask + TPprice;
+
+      
+      trade.Buy(Lotes3,_Symbol,Ask,SLbuy,TPbuy,comentario);
+      
+      }
+      
+
+if(MA[1]>HH && RSI[1]<=50 && RSI[1]>30 && Bid<LL && Position_sell_count==0)
+      {
+      
+      double SLprice = SL * _Point * ((_Digits == 5 || _Digits == 3) ? 10.0 : 1.0);
+
+      double SLsell = Bid + SLprice;
+
+      double TPprice = TP * _Point * ((_Digits == 5 || _Digits == 3) ? 10.0 : 1.0);
+
+      double TPsell = Bid - TPprice;
+
+      
+      trade.Sell(Lotes3,_Symbol,Bid,SLsell,TPsell,comentario);
+      
+      }
+
+
+//+----Find condiciones de nuestra estrategia--+//
+
+
+
+//+----Modificamos Posiciones abiertas--+//
+
+for(int i = PositionsTotal() - 1 ; i >= 0 ; i--)   //#2 not i <= 0 
+     {
+  
+     ulong ticket=PositionGetTicket(i);                            //#3 Missing PositionGetTicket(i);   
+     string PositionSimbol = PositionGetString(POSITION_SYMBOL);
+     long PositionMagicNumber=PositionGetInteger(POSITION_MAGIC); 
+     string PositionComment =PositionGetString(POSITION_COMMENT);
+     double PositionOpenPrice = PositionGetDouble(POSITION_PRICE_OPEN);
+     long PositionType = PositionGetInteger(POSITION_TYPE); 
+     double PositionSL = PositionGetDouble(POSITION_SL);
+     double PositionTP = PositionGetDouble(POSITION_TP);
+     double PositionVolume = PositionGetDouble(POSITION_VOLUME);
+     
+     
+     if(PositionSimbol==_Symbol && PositionMagicNumber==Magicnumber && PositionType==POSITION_TYPE_BUY && PositionTP==0.0){
+     
+     double NewTP = PositionOpenPrice+0.001;
+     
+      trade.PositionModify(ticket,PositionSL,NewTP);
+     
+     
+     }
+     
+     
+     
+     if(PositionSimbol==_Symbol && PositionMagicNumber==Magicnumber && PositionType==POSITION_TYPE_SELL && PositionTP==0.0){
+     
+     double NewTP = PositionOpenPrice-0.001;
+     
+      trade.PositionModify(ticket,PositionSL,NewTP);
+     
+     
+     }
+     
+     
+     }
+     
+  //+-- Fin Posiciiones Modificaciones abiertas --+//     
+  }
+//+------------------------------------------------------------------+
+
