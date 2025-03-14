@@ -1,0 +1,151 @@
+//+------------------------------------------------------------------+
+//|                                      Clase patrones de velas.mq5 |
+//|                                Copyright 2025, Bot Pulse Trading |
+//|                   https://www.mql5.com/en/users/adrianfxx/seller |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2025, Bot Pulse Trading"
+#property link      "https://www.mql5.com/en/users/adrianfxx/seller"
+#property version   "1.00"
+
+#define NL "\n"
+
+bool E_Alcista;  // Engulfing Alcista
+bool E_Bajista;  // Engulfing Bajista
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+
+int OnInit()
+  {
+//---
+   
+//---
+   return(INIT_SUCCEEDED);
+  }
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+
+   EngulfingAlcista();
+   EngulfingBajista();
+   
+      if(E_Alcista==true){
+         Comment("Tipo de Engulfing : Alcista");
+
+         }
+         
+      if(E_Bajista==true){
+         Comment("Tipo de Engulfing : Bajista");
+
+         }
+         
+      if(E_Bajista==false && E_Alcista==false ){
+         Comment("Tipo de Engulfing : No hay Ninguno");
+
+         }
+  }
+//+------------------------------------------------------------------+
+
+
+
+//+-----Engulfin Alcista -----+//
+
+void EngulfingAlcista(){
+
+
+   
+//--- identificado los Low de las 3 ultimas velas
+
+   double Low3 = iLow(_Symbol,PERIOD_CURRENT,3);
+   double Low2 = iLow(_Symbol,PERIOD_CURRENT,2);
+   double Low1 = iLow(_Symbol,PERIOD_CURRENT,1);
+   
+//+ --- Identificador de los Close de las 3 ultimas velas
+
+   double Close3 = iClose(_Symbol,PERIOD_CURRENT,3);
+   double Close2 = iClose(_Symbol,PERIOD_CURRENT,2);
+   double Close1 = iClose(_Symbol,PERIOD_CURRENT,1);
+   
+//+ --- Identificador de los Open de las 3 ultimas velas
+
+   double Open3 = iOpen(_Symbol,PERIOD_CURRENT,3);
+   double Open2 = iOpen(_Symbol,PERIOD_CURRENT,2);
+   double Open1 = iOpen(_Symbol,PERIOD_CURRENT,1);
+   
+//+ --- Identificador de los Open de las 3 ultimas velas
+
+   double High3 = iHigh(_Symbol,PERIOD_CURRENT,3);
+   double High2 = iHigh(_Symbol,PERIOD_CURRENT,2);
+   double High1 = iHigh(_Symbol,PERIOD_CURRENT,1);
+   
+   
+
+   
+if(Open2>Close2 && Open1<Close1 && Close1>Open2){
+
+   E_Alcista=true;
+
+
+}else{
+
+   E_Alcista=false;
+
+
+}
+
+}
+
+
+
+//+-----Engulfin Bajista -----+//
+
+void EngulfingBajista(){
+
+
+   
+//--- identificado los Low de las 3 ultimas velas
+
+   double Low3 = iLow(_Symbol,PERIOD_CURRENT,3);
+   double Low2 = iLow(_Symbol,PERIOD_CURRENT,2);
+   double Low1 = iLow(_Symbol,PERIOD_CURRENT,1);
+   
+//+ --- Identificador de los Close de las 3 ultimas velas
+
+   double Close3 = iClose(_Symbol,PERIOD_CURRENT,3);
+   double Close2 = iClose(_Symbol,PERIOD_CURRENT,2);
+   double Close1 = iClose(_Symbol,PERIOD_CURRENT,1);
+   
+//+ --- Identificador de los Open de las 3 ultimas velas
+
+   double Open3 = iOpen(_Symbol,PERIOD_CURRENT,3);
+   double Open2 = iOpen(_Symbol,PERIOD_CURRENT,2);
+   double Open1 = iOpen(_Symbol,PERIOD_CURRENT,1);
+   
+//+ --- Identificador de los Open de las 3 ultimas velas
+
+   double High3 = iHigh(_Symbol,PERIOD_CURRENT,3);
+   double High2 = iHigh(_Symbol,PERIOD_CURRENT,2);
+   double High1 = iHigh(_Symbol,PERIOD_CURRENT,1);
+   
+   
+
+   
+if(Open2<Close2 && Open1>Close1 && Close1<Open2){
+
+   E_Bajista=true;
+
+
+}else{
+
+   E_Bajista=false;
+
+
+}
+
+}
