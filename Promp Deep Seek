@@ -1,0 +1,40 @@
+Crea un Robot Para en mql5.
+En el cual este programado con  MagicNumber único que usara para gestionar solo sus trades
+
+Que tenga estas características:
+
+Use la librería Trade.mqh.
+Y renombre a CTrade trade
+
+
+
+En sus inputs incluya estos parámetros:
+
+Grupo con nombre <Miscelanea>
+1. Magicnumber
+2. Comentario por trade
+
+
+Grupo con nombre <Ajustes del Trade>
+1.Lotes por trade
+2.TP en porcentaje
+3.SL en Porcentaje
+4.Maximo Numero de Trades Por dia
+
+Grupo con nombre <Ajustes Horarios>
+1.HoraInicio
+2.MinutoInicio
+3.HoraFin
+4.MinutoFin
+5.Lista de Franja horaria que permita seleccionar entre Hora del Servidor, Hora Local o Hora GMT+0 
+
+Grupo con nombre <Indicador MA>
+1.PeriodoDeEMA
+2.MetodoAplicacionEMA
+3.TipoDeMA
+
+
+La estrategia consiste en:
+
+Si La hora esta comprendida entre hora y minuto de inicio y entre hora y minuto  fin la condición, esta permitido hacer trading,
+Adicional a esto debe estar el precio por encima de la MA para poner Compras y Por debajo de la MA para ventas, solo se permite 1 trade simultaneo.
